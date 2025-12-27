@@ -47,7 +47,7 @@ return [
         | true: Sadece giriş yapmış kullanıcılar formu görebilir
         | false: Herkes formu görebilir (auth kontrolü yapılmaz)
         */
-        'auth_required' => env('METAKIT_FORM_AUTH_REQUIRED', true),
+        'auth_required' => env('METAKIT_FORM_AUTH_REQUIRED', false),
         
         /*
         | Auth guard (Laravel auth guard)
