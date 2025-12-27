@@ -3,6 +3,7 @@
 namespace TunaSahincomtr\MetaKit;
 
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use TunaSahincomtr\MetaKit\Services\MetaKitManager;
 
@@ -30,6 +31,8 @@ class MetaKitServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Log::info('MetaKit ServiceProvider: Boot method called');
+        
         $this->publishes([
             __DIR__.'/../config/metakit.php' => config_path('metakit.php'),
         ], 'metakit-config');
@@ -41,10 +44,18 @@ class MetaKitServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
 
         // Load views for Blade components
-        $this->loadViewsFrom(__DIR__.'/../resources/views', 'metakit');
+        $viewPath = __DIR__.'/../resources/views';
+        $this->loadViewsFrom($viewPath, 'metakit');
+        Log::info('MetaKit ServiceProvider: Views loaded', [
+            'view_path' => $viewPath,
+            'view_exists' => file_exists($viewPath . '/components/form.blade.php'),
+        ]);
 
         $this->registerBladeDirectives();
+        Log::info('MetaKit ServiceProvider: Blade directives registered');
+        
         $this->registerMiddleware();
+        Log::info('MetaKit ServiceProvider: Middleware registered');
     }
 
     /**
@@ -80,6 +91,8 @@ class MetaKitServiceProvider extends ServiceProvider
      */
     protected function registerBladeDirectives(): void
     {
+        Log::info('MetaKit: Registering Blade directives');
+        
         // Meta tags directive
         Blade::directive('metakit', function () {
             return '<?php echo app(\TunaSahincomtr\MetaKit\Services\MetaKitManager::class)->render(); ?>';
@@ -118,19 +131,29 @@ class MetaKitServiceProvider extends ServiceProvider
             // Render the form component with all necessary data
             $apiPrefix = config('metakit.api_prefix', 'api/metakit');
             
-            // Build PHP code for the directive
+            // Debug logging
+            Log::info('MetaKit Form Directive Called', [
+                'auth_required' => $authRequired,
+                'auth_guard' => $authGuard,
+                'api_prefix' => $apiPrefix,
+                'config_exists' => config('metakit.form') !== null,
+            ]);
+            
+            // Build PHP code for the directive with logging
+            $logCode = "\\Illuminate\\Support\\Facades\\Log::info('MetaKit Form Directive Executing', ['auth_required' => " . ($authRequired ? 'true' : 'false') . "]);";
+            
             // If auth is required, check and handle accordingly
             if ($authRequired && $authRedirectRoute) {
                 // Redirect case - use app() to handle redirect properly
                 $redirectRoute = addslashes($authRedirectRoute);
-                return "<?php if (!auth()->guard('{$authGuard}')->check()) { try { \$redirect = redirect()->route('{$redirectRoute}'); } catch (\\Illuminate\\Routing\\Exceptions\\UrlGenerationException \$e) { \$redirect = redirect('{$redirectRoute}'); } \$redirect->send(); exit; } echo view('metakit::components.form', ['apiPrefix' => '{$apiPrefix}'])->render(); ?>";
+                return "<?php {$logCode} if (!auth()->guard('{$authGuard}')->check()) { \\Illuminate\\Support\\Facades\\Log::info('MetaKit Form: Auth failed, redirecting'); try { \$redirect = redirect()->route('{$redirectRoute}'); } catch (\\Illuminate\\Routing\\Exceptions\\UrlGenerationException \$e) { \$redirect = redirect('{$redirectRoute}'); } \$redirect->send(); exit; } \\Illuminate\\Support\\Facades\\Log::info('MetaKit Form: Rendering view'); try { echo view('metakit::components.form', ['apiPrefix' => '{$apiPrefix}'])->render(); } catch (\\Exception \$e) { \\Illuminate\\Support\\Facades\\Log::error('MetaKit Form View Error', ['message' => \$e->getMessage(), 'trace' => \$e->getTraceAsString()]); echo '<div class=\"alert alert-danger\">Form yüklenirken hata oluştu: ' . e(\$e->getMessage()) . '</div>'; } ?>";
             } elseif ($authRequired) {
                 // Show message if not authenticated
                 $message = addslashes($authDeniedMessage);
-                return "<?php if (!auth()->guard('{$authGuard}')->check()) { echo '<div class=\"alert alert-danger\"><i class=\"bi bi-exclamation-triangle\"></i> {$message}</div>'; } else { echo view('metakit::components.form', ['apiPrefix' => '{$apiPrefix}'])->render(); } ?>";
+                return "<?php {$logCode} if (!auth()->guard('{$authGuard}')->check()) { \\Illuminate\\Support\\Facades\\Log::info('MetaKit Form: Auth failed, showing message'); echo '<div class=\"alert alert-danger\"><i class=\"bi bi-exclamation-triangle\"></i> {$message}</div>'; } else { \\Illuminate\\Support\\Facades\\Log::info('MetaKit Form: Rendering view'); try { echo view('metakit::components.form', ['apiPrefix' => '{$apiPrefix}'])->render(); } catch (\\Exception \$e) { \\Illuminate\\Support\\Facades\\Log::error('MetaKit Form View Error', ['message' => \$e->getMessage(), 'trace' => \$e->getTraceAsString()]); echo '<div class=\"alert alert-danger\">Form yüklenirken hata oluştu: ' . e(\$e->getMessage()) . '</div>'; } } ?>";
             } else {
                 // No auth required - just render the form
-                return "<?php echo view('metakit::components.form', ['apiPrefix' => '{$apiPrefix}'])->render(); ?>";
+                return "<?php {$logCode} \\Illuminate\\Support\\Facades\\Log::info('MetaKit Form: No auth required, rendering view'); try { echo view('metakit::components.form', ['apiPrefix' => '{$apiPrefix}'])->render(); } catch (\\Exception \$e) { \\Illuminate\\Support\\Facades\\Log::error('MetaKit Form View Error', ['message' => \$e->getMessage(), 'trace' => \$e->getTraceAsString()]); echo '<div class=\"alert alert-danger\">Form yüklenirken hata oluştu: ' . e(\$e->getMessage()) . '</div>'; } ?>";
             }
         });
     }
