@@ -3,15 +3,16 @@
     "description": "SEO meta management package for Laravel",
     "type": "library",
     "license": "MIT",
-    "authors": [
-        {
-            "name": "Tuna Sahin",
-            "email": "info@tunasahin.com.tr"
-        }
-    ],
+    "authors": [{
+        "name": "Tuna Sahin",
+        "email": "info@tunasahin.com.tr"
+    }],
     "require": {
         "php": "^8.1",
         "laravel/framework": "^10.0|^11.0"
+    },
+    "support": {
+        "source": "https://github.com/tunasahincomtr/meta-kit"
     },
     "autoload": {
         "psr-4": {
@@ -32,4 +33,3 @@
     "minimum-stability": "dev",
     "prefer-stable": true
 }
-

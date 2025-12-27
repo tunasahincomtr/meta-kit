@@ -16,9 +16,28 @@ Laravel için URL bazlı SEO meta tag yönetim paketi. Her sayfa için özel met
 
 ## Kurulum
 
-### 1. Composer ile Paketi Ekleyin
+### 1. Repository'yi Composer'a Ekleyin
 
-`composer.json` dosyanıza path repository ekleyin:
+`composer.json` dosyanıza GitHub repository'yi ekleyin:
+
+```json
+{
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/tunasahincomtr/meta-kit"
+        }
+    ]
+}
+```
+
+### 2. Paketi Yükleyin
+
+```bash
+composer require tunasahincomtr/metakit:"*"
+```
+
+**Alternatif:** Eğer paketi projeniz içinde local olarak kullanmak isterseniz:
 
 ```json
 {
@@ -30,29 +49,13 @@ Laravel için URL bazlı SEO meta tag yönetim paketi. Her sayfa için özel met
                 "symlink": true
             }
         }
-    ],
-    "require": {
-        "tunasahincomtr/metakit": "*"
-    },
-    "autoload": {
-        "psr-4": {
-            "TunaSahincomtr\\MetaKit\\": "modules/packages/tunasahincomtr/metakit/src/"
-        },
-        "files": [
-            "modules/packages/tunasahincomtr/metakit/src/Support/helpers.php"
-        ]
-    }
+    ]
 }
 ```
 
-Ardından paketi yükleyin:
+Sonra `composer require tunasahincomtr/metakit:"*"` komutunu çalıştırın.
 
-```bash
-composer require tunasahincomtr/metakit:"*"
-composer dump-autoload
-```
-
-### 2. Config ve Migration
+### 3. Config ve Migration
 
 Config dosyasını yayınlayın:
 
