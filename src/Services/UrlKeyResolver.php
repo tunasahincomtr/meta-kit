@@ -9,10 +9,19 @@ class UrlKeyResolver
 {
     /**
      * Resolve domain from request.
+     * Includes port if present (for local development: 127.0.0.1:8000).
      */
     public function resolveDomain(Request $request): string
     {
-        return $request->getHost();
+        $host = $request->getHost();
+        $port = $request->getPort();
+        
+        // Include port if it's not a standard port (80 for http, 443 for https)
+        if ($port && $port != 80 && $port != 443) {
+            return $host . ':' . $port;
+        }
+        
+        return $host;
     }
 
     /**

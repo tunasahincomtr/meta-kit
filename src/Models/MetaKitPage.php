@@ -5,6 +5,9 @@ namespace TunaSahincomtr\MetaKit\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Log;
+use TunaSahincomtr\MetaKit\Services\MetaKitManager;
 
 class MetaKitPage extends Model
 {
@@ -20,15 +23,22 @@ class MetaKitPage extends Model
         'description',
         'keywords',
         'robots',
+        'language',
         'canonical_url',
         'og_title',
         'og_description',
         'og_image',
+        'og_site_name',
         'twitter_card',
         'twitter_title',
         'twitter_description',
         'twitter_image',
+        'twitter_site',
+        'twitter_creator',
+        'author',
+        'theme_color',
         'jsonld',
+        'breadcrumb_jsonld',
         'status',
         'created_by',
         'updated_by',
@@ -36,7 +46,72 @@ class MetaKitPage extends Model
 
     protected $casts = [
         'jsonld' => 'array',
+        'breadcrumb_jsonld' => 'array',
     ];
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Purge cache when page is saved (created or updated)
+        static::saved(function ($page) {
+            $page->purgeCache();
+            // Also purge sitemap cache
+            \TunaSahincomtr\MetaKit\Http\Controllers\SitemapController::purgeCache();
+        });
+
+        // Purge cache when page is deleted
+        static::deleted(function ($page) {
+            $page->purgeCache();
+            // Also purge sitemap cache
+            \TunaSahincomtr\MetaKit\Http\Controllers\SitemapController::purgeCache();
+        });
+    }
+
+    /**
+     * Purge cache for this page.
+     * Also purges old cache if domain/path/query_hash changed.
+     */
+    public function purgeCache(): void
+    {
+        try {
+            $manager = App::make(MetaKitManager::class);
+            
+            // Purge current cache
+            $manager->purgeCache(
+                $this->domain,
+                $this->path,
+                $this->query_hash
+            );
+
+            // If path or domain changed, also purge old cache
+            if ($this->wasChanged(['domain', 'path', 'query_hash'])) {
+                $originalDomain = $this->getOriginal('domain');
+                $originalPath = $this->getOriginal('path');
+                $originalQueryHash = $this->getOriginal('query_hash');
+
+                // Only purge if old values exist and are different
+                if ($originalDomain && $originalPath) {
+                    $manager->purgeCache(
+                        $originalDomain,
+                        $originalPath,
+                        $originalQueryHash
+                    );
+                }
+            }
+        } catch (\Exception $e) {
+            // Silently fail - don't break model operations if cache fails
+            if (config('app.debug', false)) {
+                Log::warning('MetaKit: Failed to purge cache', [
+                    'error' => $e->getMessage(),
+                    'page_id' => $this->id ?? null,
+                ]);
+            }
+        }
+    }
 
     /**
      * Get the user that created the page.
@@ -86,4 +161,3 @@ class MetaKitPage extends Model
         return $query->where('query_hash', $queryHash);
     }
 }
-

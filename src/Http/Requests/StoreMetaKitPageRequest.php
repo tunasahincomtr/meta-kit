@@ -23,6 +23,8 @@ class StoreMetaKitPageRequest extends FormRequest
             'domain' => ['required', 'string', 'max:255'],
             'path' => ['required', 'string', 'max:255', 'starts_with:/'],
             'query_hash' => ['nullable', 'string', 'max:40'],
+            // Unique constraint: domain + path + query_hash combination
+            // This is handled at database level, but we can add a custom rule if needed
             'title' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'keywords' => ['nullable', 'string'],
@@ -35,7 +37,15 @@ class StoreMetaKitPageRequest extends FormRequest
             'twitter_title' => ['nullable', 'string', 'max:255'],
             'twitter_description' => ['nullable', 'string'],
             'twitter_image' => ['nullable', 'url', 'max:2048'],
+            'twitter_site' => ['nullable', 'string', 'max:100'],
+            'twitter_creator' => ['nullable', 'string', 'max:100'],
+            'language' => ['nullable', 'string', 'max:10'],
+            'og_site_name' => ['nullable', 'string', 'max:255'],
+            'author' => ['nullable', 'string', 'max:255'],
+            'theme_color' => ['nullable', 'string', 'max:7', 'regex:/^#?[0-9A-Fa-f]{6}$/'],
             'jsonld' => ['nullable', 'array'],
+            'jsonld.*' => ['nullable', 'array'], // Validate each item in jsonld array is an array
+            'breadcrumb_jsonld' => ['nullable', 'array'], // Kept for backward compatibility
             'status' => ['required', 'in:draft,active'],
         ];
     }
@@ -50,6 +60,14 @@ class StoreMetaKitPageRequest extends FormRequest
             $decoded = json_decode($this->jsonld, true);
             if (json_last_error() === JSON_ERROR_NONE) {
                 $this->merge(['jsonld' => $decoded]);
+            }
+        }
+
+        // Handle breadcrumb_jsonld as string (decode if needed)
+        if ($this->has('breadcrumb_jsonld') && is_string($this->breadcrumb_jsonld)) {
+            $decoded = json_decode($this->breadcrumb_jsonld, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $this->merge(['breadcrumb_jsonld' => $decoded]);
             }
         }
     }
