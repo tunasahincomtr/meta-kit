@@ -34,7 +34,7 @@ Laravel için URL bazlı SEO meta tag yönetim paketi. Her sayfa için özel met
 ### 2. Paketi Yükleyin
 
 ```bash
-composer require tunasahincomtr/metakit:"*"
+composer require tunasahincomtr/metakit:dev-main
 ```
 
 **Alternatif:** Eğer paketi projeniz içinde local olarak kullanmak isterseniz:
